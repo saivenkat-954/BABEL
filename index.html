@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Babel Voice Pro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@400;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+/* ============================================================
+   CSS VARIABLES & RESET
+============================================================ */
+:root {
+  --bg:       #03050f;
+  --panel:    rgba(10,18,40,0.78);
+  --border:   rgba(0,230,255,0.18);
+  --cyan:     #00e6ff;
+  --magenta:  #ff2df7;
+  --gold:     #ffd166;
+  --green:    #06d6a0;
+  --red:      #ff4466;
+  --purple:   #a855f7;
+  --text:     #e8f0ff;
+  --muted:    #7a8aaa;
+  --radius:   16px;
+  --tr:       0.32s cubic-bezier(.4,0,.2,1);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ── ANIMATED BG ── */
+.bg-canvas{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none;}
+.orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.35;animation:drift 14s ease-in-out infinite alternate;}
+.orb1{width:520px;height:520px;background:radial-gradient(circle,#0044ff,transparent);top:-15%;left:-12%;animation-duration:16s;}
+.orb2{width:400px;height:400px;background:radial-gradient(circle,#cc00ff,transparent);bottom:-10%;right:-8%;animation-duration:12s;}
+.orb3{width:300px;height:300px;background:radial-gradient(circle,#00e6ff,transparent);top:40%;left:55%;animation-duration:18s;}
+@keyframes drift{0%{transform:translate(0,0) scale(1)}100%{transform:translate(40px,50px) scale(1.12)}}
+.stars{position:absolute;inset:0;}
+.star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--d) ease-in-out infinite alternate;}
+@keyframes twinkle{0%{opacity:.1}100%{opacity:.8}}
+
+/* ── LAYOUT ── */
+#app{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:16px 12px 80px;}
+
+/* ── HEADER ── */
+header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 20px;}
+.logo{font-family:'Syncopate',sans-serif;font-size:1.45rem;font-weight:700;background:linear-gradient(90deg,var(--cyan),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:.08em;}
+.logo span{font-weight:400;opacity:.7;}
+.tagline{font-size:.72rem;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;margin-top:2px;}
+.server-status{display:flex;align-items:center;gap:6px;font-size:.72rem;font-weight:600;letter-spacing:.04em;}
+.status-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);transition:var(--tr);}
+.status-dot.online{background:var(--green);box-shadow:0 0 8px var(--green);}
+.status-dot.offline{background:var(--red);box-shadow:0 0 8px var(--red);}
+.status-dot.checking{background:var(--gold);animation:blink 1s ease infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:6px;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:50px;padding:5px;width:fit-content;margin:0 auto 28px;}
+.tab-btn{background:none;border:none;color:var(--muted);font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:500;letter-spacing:.04em;padding:8px 22px;border-radius:50px;cursor:pointer;transition:var(--tr);white-space:nowrap;}
+.tab-btn.active{background:linear-gradient(135deg,var(--cyan),var(--magenta));color:#fff;box-shadow:0 0 18px rgba(0,230,255,.4);}
+.tab-btn:hover:not(.active){color:var(--text);background:rgba(255,255,255,.07);}
+
+/* ── PANELS ── */
+.panel{display:none;animation:fadeUp .45s ease forwards;}
+.panel.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── GLASS ── */
+.glass{background:var(--panel);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius);padding:24px;}
+
+/* ── SECTION LABEL ── */
+.section-label{font-size:.68rem;color:var(--muted);letter-spacing:.18em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── VOICE MODE BAR ── */
+.voice-mode-bar{display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.3);border:1px solid var(--border);border-radius:12px;padding:12px 18px;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.vm-label{font-size:.72rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+.vm-sub{font-size:.68rem;color:var(--muted);margin-top:3px;}
+.vm-toggle{display:flex;gap:4px;background:rgba(255,255,255,.05);border-radius:30px;padding:4px;}
+.vm-btn{background:none;border:1px solid transparent;cursor:pointer;font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:600;padding:7px 18px;border-radius:25px;transition:var(--tr);color:var(--muted);}
+.vm-btn.active-browser{background:rgba(0,230,255,.15);color:var(--cyan);border-color:rgba(0,230,255,.3);}
+.vm-btn.active-murf{background:linear-gradient(135deg,rgba(168,85,247,.22),rgba(255,45,247,.12));color:var(--purple);border-color:rgba(168,85,247,.35);}
+.vm-btn:hover:not([class*="active"]){color:var(--text);}
+
+/* Murf options drawer */
+.murf-options{max-height:0;overflow:hidden;transition:max-height .35s ease, margin-top .35s ease;display:flex;gap:10px;flex-wrap:wrap;margin-top:0;}
+.murf-options.open{max-height:90px;margin-top:12px;}
+.murf-select{background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);color:var(--text);font-family:'Outfit',sans-serif;font-size:.8rem;padding:8px 14px;border-radius:8px;outline:none;cursor:pointer;flex:1;min-width:160px;}
+.murf-select:focus{border-color:var(--purple);}
+.backend-url-input{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted);font-family:'Outfit',sans-serif;font-size:.78rem;padding:8px 12px;border-radius:8px;outline:none;flex:1;min-width:170px;}
+.backend-url-input:focus{border-color:var(--purple);color:var(--text);}
+
+/* ── LANG ROW ── */
+.lang-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:22px;flex-wrap:wrap;}
+.lang-select{background:rgba(255,255,255,.07);border:1px solid var(--border);color:var(--text);font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:500;padding:10px 18px;border-radius:50px;cursor:pointer;outline:none;transition:var(--tr);}
+.lang-select:focus{border-color:var(--cyan);}
+.swap-btn{background:rgba(0,230,255,.1);border:1px solid var(--cyan);color:var(--cyan);width:40px;height:40px;border-radius:50%;cursor:pointer;font-size:1.1rem;transition:var(--tr);display:flex;align-items:center;justify-content:center;}
+.swap-btn:hover{background:var(--cyan);color:var(--bg);transform:rotate(180deg);}
+
+/* ── PERSONS ── */
+.person-row{display:flex;gap:10px;margin-bottom:18px;}
+.person-btn{flex:1;background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);font-family:'Outfit',sans-serif;font-size:.82rem;font-weight:600;padding:10px;border-radius:10px;cursor:pointer;transition:var(--tr);display:flex;align-items:center;justify-content:center;gap:7px;}
+.person-btn.active-a{background:rgba(0,230,255,.12);border-color:var(--cyan);color:var(--cyan);box-shadow:0 0 14px rgba(0,230,255,.25);}
+.person-btn.active-b{background:rgba(255,45,247,.12);border-color:var(--magenta);color:var(--magenta);box-shadow:0 0 14px rgba(255,45,247,.25);}
+.avatar{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:700;}
+.av-a{background:linear-gradient(135deg,var(--cyan),#0066ff);color:#fff;}
+.av-b{background:linear-gradient(135deg,var(--magenta),#aa00ff);color:#fff;}
+
+/* ── INPUT ── */
+.input-area{display:flex;gap:10px;align-items:flex-end;margin-bottom:16px;}
+.text-input{flex:1;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--text);font-family:'Outfit',sans-serif;font-size:.9rem;padding:14px 16px;border-radius:12px;resize:none;outline:none;transition:var(--tr);line-height:1.5;min-height:52px;max-height:120px;}
+.text-input:focus{border-color:var(--cyan);box-shadow:0 0 16px rgba(0,230,255,.2);}
+.text-input::placeholder{color:var(--muted);}
+.mic-btn{width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;background:linear-gradient(135deg,var(--cyan),#0055ff);color:#fff;font-size:1.2rem;flex-shrink:0;transition:var(--tr);display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(0,230,255,.4);}
+.mic-btn.listening{background:linear-gradient(135deg,var(--red),#ff7700);box-shadow:0 0 30px rgba(255,68,102,.7);animation:micPulse 1s ease-in-out infinite;}
+@keyframes micPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+
+/* ── TRANSLATE BUTTON ── */
+.translate-btn{width:100%;background:linear-gradient(135deg,var(--cyan),var(--magenta));border:none;color:#fff;font-family:'Syncopate',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.12em;padding:14px;border-radius:12px;cursor:pointer;transition:var(--tr);position:relative;overflow:hidden;text-transform:uppercase;margin-bottom:18px;}
+.translate-btn.murf-mode{background:linear-gradient(135deg,var(--purple),var(--magenta));}
+.translate-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,230,255,.35);}
+.translate-btn.loading{pointer-events:none;}
+.translate-btn .btn-text{transition:opacity .2s;}
+.translate-btn.loading .btn-text{opacity:0;}
+.btn-loader{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.translate-btn.loading .btn-loader{opacity:1;}
+.spinner{width:20px;height:20px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── OUTPUT ── */
+.output-area{background:rgba(0,230,255,.04);border:1px solid rgba(0,230,255,.15);border-radius:12px;padding:16px 16px 38px;min-height:54px;font-size:.93rem;line-height:1.6;color:var(--text);position:relative;margin-bottom:14px;}
+.output-area.empty{color:var(--muted);font-style:italic;padding-bottom:16px;}
+.output-area.murf-result{background:rgba(168,85,247,.06);border-color:rgba(168,85,247,.25);}
+.speak-btn{position:absolute;bottom:10px;right:10px;background:rgba(0,230,255,.15);border:1px solid rgba(0,230,255,.3);color:var(--cyan);padding:5px 12px;border-radius:20px;cursor:pointer;font-size:.75rem;font-family:'Outfit',sans-serif;font-weight:600;transition:var(--tr);display:none;}
+.speak-btn:hover{background:var(--cyan);color:var(--bg);}
+.speak-btn.visible{display:block;}
+.speak-btn.murf-speak{background:rgba(168,85,247,.15);border-color:rgba(168,85,247,.4);color:var(--purple);}
+.speak-btn.murf-speak:hover{background:var(--purple);color:#fff;}
+
+/* ── MURF AUDIO PLAYER ── */
+.audio-player-row{display:none;align-items:center;gap:12px;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.22);border-radius:12px;padding:12px 16px;margin-bottom:16px;}
+.audio-player-row.visible{display:flex;}
+.audio-player-row audio{flex:1;height:36px;}
+.audio-engine-tag{font-size:.62rem;font-weight:700;color:var(--purple);letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;}
+
+/* ── CHAT ── */
+.chat-window{border:1px solid var(--border);border-radius:var(--radius);padding:16px;min-height:200px;max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:12px;background:rgba(0,0,0,.3);}
+.chat-window::-webkit-scrollbar{width:4px;}
+.chat-window::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+.bubble{max-width:82%;animation:bubbleIn .35s ease forwards;display:flex;flex-direction:column;gap:4px;}
+@keyframes bubbleIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+.bubble.person-a{align-self:flex-start;}
+.bubble.person-b{align-self:flex-end;align-items:flex-end;}
+.bubble-meta{font-size:.68rem;color:var(--muted);padding:0 6px;display:flex;align-items:center;gap:6px;}
+.bubble-badge{font-size:.55rem;padding:2px 7px;border-radius:10px;font-weight:700;letter-spacing:.04em;}
+.bb-br{background:rgba(0,230,255,.1);color:var(--cyan);}
+.bb-mu{background:rgba(168,85,247,.15);color:var(--purple);}
+.bubble-body{padding:11px 16px;border-radius:18px;font-size:.86rem;line-height:1.55;}
+.person-a .bubble-body{background:rgba(0,230,255,.12);border:1px solid rgba(0,230,255,.2);border-bottom-left-radius:4px;}
+.person-b .bubble-body{background:rgba(255,45,247,.12);border:1px solid rgba(255,45,247,.2);border-bottom-right-radius:4px;}
+.bubble-original{font-size:.75rem;color:var(--muted);padding:0 6px;}
+.chat-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.82rem;flex-direction:column;gap:8px;}
+.chat-empty .icon{font-size:2.2rem;opacity:.4;}
+.chat-controls{display:flex;justify-content:flex-end;margin-top:10px;}
+.clear-btn{background:none;border:1px solid var(--border);color:var(--muted);font-family:'Outfit',sans-serif;font-size:.76rem;padding:6px 14px;border-radius:20px;cursor:pointer;transition:var(--tr);}
+.clear-btn:hover{border-color:var(--red);color:var(--red);}
+
+/* ── GAMES ── */
+.game-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+.game-title{font-family:'Syncopate',sans-serif;font-size:1rem;font-weight:700;color:var(--gold);letter-spacing:.08em;}
+.score-display{display:flex;gap:16px;}
+.score-box{text-align:center;background:rgba(255,209,102,.08);border:1px solid rgba(255,209,102,.2);border-radius:10px;padding:8px 18px;}
+.score-box .val{font-family:'Syncopate',sans-serif;font-size:1.4rem;font-weight:700;color:var(--gold);}
+.score-box .lbl{font-size:.65rem;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;}
+.question-card{text-align:center;padding:30px 20px;margin-bottom:20px;}
+.question-lang{font-size:.72rem;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;}
+.question-word{font-family:'Syncopate',sans-serif;font-size:2rem;font-weight:700;background:linear-gradient(135deg,var(--gold),var(--magenta));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:4px;}
+.question-hint{font-size:.78rem;color:var(--muted);}
+.answers-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.answer-btn{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text);font-family:'Outfit',sans-serif;font-size:.88rem;font-weight:500;padding:16px 12px;border-radius:12px;cursor:pointer;transition:var(--tr);text-align:center;}
+.answer-btn:hover:not(:disabled){background:rgba(0,230,255,.1);border-color:var(--cyan);transform:translateY(-2px);}
+.answer-btn.correct{background:rgba(6,214,160,.18);border-color:var(--green);color:var(--green);animation:correctFlash .5s ease;}
+.answer-btn.wrong{background:rgba(255,68,102,.15);border-color:var(--red);color:var(--red);animation:shake .4s ease;}
+@keyframes correctFlash{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+.feedback-msg{text-align:center;font-size:.9rem;min-height:28px;font-weight:600;margin-bottom:12px;}
+.feedback-msg.correct{color:var(--green);}
+.feedback-msg.wrong{color:var(--red);}
+.next-btn{width:100%;background:linear-gradient(135deg,var(--gold),#ff7700);border:none;color:var(--bg);font-family:'Syncopate',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.1em;padding:14px;border-radius:12px;cursor:pointer;transition:var(--tr);text-transform:uppercase;display:none;}
+.next-btn.show{display:block;animation:fadeUp .3s ease;}
+.next-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,209,102,.35);}
+.game-mode-selector{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+.mode-btn{background:rgba(255,255,255,.04);border:1px solid var(--border);color:var(--muted);font-family:'Outfit',sans-serif;font-size:.78rem;font-weight:600;padding:7px 16px;border-radius:20px;cursor:pointer;transition:var(--tr);}
+.mode-btn.active{background:rgba(255,209,102,.12);border-color:var(--gold);color:var(--gold);}
+.streak-bar{display:flex;gap:5px;margin-bottom:20px;justify-content:center;}
+.streak-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.1);transition:var(--tr);}
+.streak-dot.lit{background:var(--gold);box-shadow:0 0 8px var(--gold);}
+
+/* ── READING ── */
+.reading-filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.filter-btn{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--muted);font-family:'Outfit',sans-serif;font-size:.76rem;font-weight:600;padding:7px 16px;border-radius:20px;cursor:pointer;transition:var(--tr);}
+.filter-btn.active{background:rgba(6,214,160,.12);border-color:var(--green);color:var(--green);}
+.phrases-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+.phrase-card{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:18px;cursor:pointer;transition:var(--tr);position:relative;overflow:hidden;}
+.phrase-card::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,230,255,.06),rgba(255,45,247,.06));opacity:0;transition:var(--tr);}
+.phrase-card:hover{border-color:var(--cyan);transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,230,255,.15);}
+.phrase-card:hover::before{opacity:1;}
+.phrase-category{font-size:.65rem;color:var(--muted);letter-spacing:.15em;text-transform:uppercase;margin-bottom:8px;}
+.phrase-english{font-size:1.05rem;font-weight:600;margin-bottom:10px;}
+.phrase-translations{display:flex;flex-direction:column;gap:5px;}
+.phrase-trans{display:flex;align-items:center;gap:8px;font-size:.82rem;}
+.lang-badge{font-size:.62rem;font-weight:700;letter-spacing:.08em;padding:2px 8px;border-radius:20px;flex-shrink:0;}
+.badge-hi{background:rgba(255,153,0,.12);color:#ffaa33;border:1px solid rgba(255,153,0,.25);}
+.badge-es{background:rgba(255,180,0,.12);color:#ffd166;border:1px solid rgba(255,180,0,.25);}
+.badge-fr{background:rgba(0,120,255,.12);color:#66aaff;border:1px solid rgba(0,120,255,.25);}
+.badge-de{background:rgba(0,220,160,.12);color:#06d6a0;border:1px solid rgba(0,220,160,.25);}
+.phrase-speak-btn{position:absolute;top:12px;right:12px;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--muted);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:.8rem;transition:var(--tr);display:flex;align-items:center;justify-content:center;}
+.phrase-speak-btn:hover{background:var(--cyan);color:var(--bg);border-color:var(--cyan);}
+
+/* ── TOASTS ── */
+.toast-container{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;align-items:center;}
+.toast{background:rgba(10,18,40,.95);border:1px solid var(--border);backdrop-filter:blur(20px);color:var(--text);padding:10px 22px;border-radius:50px;font-size:.82rem;font-weight:500;animation:toastIn .35s ease;white-space:nowrap;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+.toast.success{border-color:var(--green);color:var(--green);}
+.toast.error{border-color:var(--red);color:var(--red);}
+.toast.info{border-color:var(--cyan);color:var(--cyan);}
+.toast.murf{border-color:var(--purple);color:var(--purple);}
+@keyframes toastIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{from{opacity:1}to{opacity:0;transform:translateY(12px)}}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  .logo{font-size:1.1rem;}
+  .tabs{flex-wrap:wrap;justify-content:center;}
+  .tab-btn{padding:7px 14px;font-size:.76rem;}
+  .answers-grid{grid-template-columns:1fr;}
+  .phrases-grid{grid-template-columns:1fr;}
+  .question-word{font-size:1.5rem;}
+  .voice-mode-bar{flex-direction:column;align-items:flex-start;}
+}
+::-webkit-scrollbar{width:6px;}
+::-webkit-scrollbar-track{background:rgba(255,255,255,.02);}
+::-webkit-scrollbar-thumb{background:rgba(0,230,255,.2);border-radius:4px;}
+</style>
+</head>
+<body>
+
+<!-- Animated background -->
+<div class="bg-canvas" aria-hidden="true">
+  <div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+  <div class="stars" id="stars"></div>
+</div>
+
+<div id="app">
+
+  <!-- HEADER -->
+  <header>
+    <div>
+      <div class="logo">BABEL <span>VOICE</span> PRO</div>
+      <div class="tagline">Gemini AI ✦ Murf Neural TTS ✦ 6 Languages</div>
+    </div>
+    <div class="server-status">
+      <div class="status-dot checking" id="statusDot"></div>
+      <span id="statusText">Connecting…</span>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <nav class="tabs" role="tablist">
+    <button class="tab-btn active" data-tab="translator">🎙️ Translator</button>
+    <button class="tab-btn" data-tab="games">🎮 Games</button>
+    <button class="tab-btn" data-tab="reading">📖 Phrases</button>
+  </nav>
+
+  <!-- ==================== TRANSLATOR ==================== -->
+  <div class="panel active glass" id="panel-translator">
+
+    <!-- Voice Mode Toggle -->
+    <div class="voice-mode-bar">
+      <div>
+        <div class="vm-label">Voice Engine</div>
+        <div class="vm-sub" id="vmSubLabel">Browser TTS — no backend needed</div>
+      </div>
+      <div class="vm-toggle">
+        <button class="vm-btn active-browser" id="vmBrowser">🌐 Browser</button>
+        <button class="vm-btn" id="vmMurf">✨ Murf AI</button>
+      </div>
+    </div>
+
+    <!-- Murf options (hidden until Murf mode is active) -->
+    <div class="murf-options" id="murfOptions">
+      <select class="murf-select" id="murfVoiceSelect">
+        <option value="">Default voice</option>
+      </select>
+      <input class="backend-url-input" type="text" id="backendUrl"
+             value="http://localhost:5000" placeholder="Backend URL"/>
+    </div>
+
+    <!-- Language Pair -->
+    <div class="section-label">Language Pair</div>
+    <div class="lang-row">
+      <select class="lang-select" id="langFrom">
+        <option value="en">🇬🇧 English</option>
+        <option value="hi">🇮🇳 Hindi</option>
+        <option value="es">🇪🇸 Spanish</option>
+        <option value="fr">🇫🇷 French</option>
+        <option value="de">🇩🇪 German</option>
+        <option value="ja">🇯🇵 Japanese</option>
+      </select>
+      <button class="swap-btn" id="swapLangBtn" title="Swap">⇄</button>
+      <select class="lang-select" id="langTo">
+        <option value="hi">🇮🇳 Hindi</option>
+        <option value="en">🇬🇧 English</option>
+        <option value="es">🇪🇸 Spanish</option>
+        <option value="fr">🇫🇷 French</option>
+        <option value="de">🇩🇪 German</option>
+        <option value="ja">🇯🇵 Japanese</option>
+      </select>
+    </div>
+
+    <!-- Active Speaker -->
+    <div class="section-label">Active Speaker</div>
+    <div class="person-row">
+      <button class="person-btn active-a" id="btnPersonA">
+        <div class="avatar av-a">A</div> Person A
+      </button>
+      <button class="person-btn" id="btnPersonB">
+        <div class="avatar av-b">B</div> Person B
+      </button>
+    </div>
+
+    <!-- Input -->
+    <div class="section-label">Input</div>
+    <div class="input-area">
+      <textarea class="text-input" id="inputText"
+                placeholder="Type here or tap 🎤 to speak…" rows="2"></textarea>
+      <button class="mic-btn" id="micBtn" title="Click to listen">🎤</button>
+    </div>
+
+    <!-- Translate button -->
+    <button class="translate-btn" id="translateBtn">
+      <span class="btn-text" id="translateBtnText">Translate</span>
+      <div class="btn-loader"><div class="spinner"></div></div>
+    </button>
+
+    <!-- Translation output -->
+    <div class="section-label">Translation</div>
+    <div class="output-area empty" id="outputArea">
+      Translation will appear here…
+      <button class="speak-btn" id="speakBtn">🔊 Play</button>
+    </div>
+
+    <!-- Murf audio player (shown after Murf response) -->
+    <div class="audio-player-row" id="audioPlayerRow">
+      <audio id="murfAudioPlayer" controls></audio>
+      <span class="audio-engine-tag">✨ Murf AI</span>
+    </div>
+
+    <!-- Chat conversation -->
+    <div class="section-label">Conversation</div>
+    <div class="chat-window" id="chatWindow">
+      <div class="chat-empty" id="chatEmpty">
+        <span class="icon">💬</span>
+        <span>Start a conversation — translations appear here</span>
+      </div>
+    </div>
+    <div class="chat-controls">
+      <button class="clear-btn" id="clearChatBtn">🗑 Clear chat</button>
+    </div>
+
+  </div><!-- /translator -->
+
+  <!-- ==================== GAMES ==================== -->
+  <div class="panel glass" id="panel-games">
+    <div class="game-header">
+      <div>
+        <div class="game-title">⚡ Vocab Challenge</div>
+        <div style="font-size:.75rem;color:var(--muted);margin-top:4px;">Guess the correct translation</div>
+      </div>
+      <div class="score-display">
+        <div class="score-box"><div class="val" id="scoreVal">0</div><div class="lbl">Score</div></div>
+        <div class="score-box"><div class="val" id="bestVal">0</div><div class="lbl">Best</div></div>
+      </div>
+    </div>
+    <div class="section-label">Mode</div>
+    <div class="game-mode-selector">
+      <button class="mode-btn active" data-mode="en-es">EN→ES</button>
+      <button class="mode-btn" data-mode="en-fr">EN→FR</button>
+      <button class="mode-btn" data-mode="en-de">EN→DE</button>
+      <button class="mode-btn" data-mode="en-hi">EN→HI</button>
+      <button class="mode-btn" data-mode="es-en">ES→EN</button>
+    </div>
+    <div class="streak-bar" id="streakBar"></div>
+    <div class="question-card glass">
+      <div class="question-lang" id="qLang">English → Spanish</div>
+      <div class="question-word" id="qWord">Hello</div>
+      <div class="question-hint" id="qHint">Select the correct translation</div>
+    </div>
+    <div class="answers-grid" id="answersGrid"></div>
+    <div class="feedback-msg" id="feedbackMsg"></div>
+    <button class="next-btn" id="nextBtn">Next Question →</button>
+  </div>
+
+  <!-- ==================== READING ==================== -->
+  <div class="panel glass" id="panel-reading">
+    <div style="margin-bottom:16px;">
+      <div style="font-family:'Syncopate',sans-serif;font-size:.9rem;font-weight:700;color:var(--green);letter-spacing:.08em;">📖 Phrase Library</div>
+      <div style="font-size:.76rem;color:var(--muted);margin-top:4px;">
+        Tap any card to hear it · 30 essential phrases · Hindi 🇮🇳 included
+      </div>
+    </div>
+    <div class="reading-filters">
+      <button class="filter-btn active" data-cat="all">All</button>
+      <button class="filter-btn" data-cat="greetings">Greetings</button>
+      <button class="filter-btn" data-cat="polite">Polite</button>
+      <button class="filter-btn" data-cat="questions">Questions</button>
+      <button class="filter-btn" data-cat="directions">Directions</button>
+      <button class="filter-btn" data-cat="food">Food</button>
+      <button class="filter-btn" data-cat="emergency">Emergency</button>
+    </div>
+    <div class="phrases-grid" id="phrasesGrid"></div>
+  </div>
+
+</div><!-- /app -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ================================================================
+     JAVASCRIPT
+================================================================ -->
+<script>
+'use strict';
+
+/* ============================================================
+   STAR FIELD
+============================================================ */
+(function(){
+  const c = document.getElementById('stars');
+  for(let i=0;i<120;i++){
+    const s=document.createElement('div'); s.className='star';
+    const sz=Math.random()*2.5+.5;
+    s.style.cssText=`width:${sz}px;height:${sz}px;top:${Math.random()*100}%;left:${Math.random()*100}%;--d:${(Math.random()*3+2).toFixed(1)}s;animation-delay:${(Math.random()*4).toFixed(1)}s;`;
+    c.appendChild(s);
+  }
+})();
+
+/* ============================================================
+   APP STATE
+============================================================ */
+const state = {
+  voiceMode:           'browser',  // 'browser' | 'murf'
+  activePerson:        'a',
+  langFrom:            'en',
+  langTo:              'hi',
+  lastTranslation:     '',
+  lastTranslationLang: 'hi',
+  lastAudioBase64:     null,
+  serverOnline:        false,
+  isListening:         false,
+  recognition:         null,
+  murfVoices:          {},
+  game: { mode:'en-es', score:0, best:0, streak:0, answered:false, streakMax:5 }
+};
+
+/* ============================================================
+   UTILITIES
+============================================================ */
+function cap(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function shuffle(a){ for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a; }
+function getLangCode(c){ return {en:'en-US',es:'es-ES',fr:'fr-FR',de:'de-DE',ja:'ja-JP',hi:'hi-IN'}[c]||'en-US'; }
+function getBackendUrl(){ return (document.getElementById('backendUrl').value||'http://localhost:5000').replace(/\/$/,''); }
+
+function showToast(msg, type='info'){
+  const c=document.getElementById('toastContainer');
+  const t=document.createElement('div'); t.className=`toast ${type}`; t.textContent=msg;
+  c.appendChild(t);
+  setTimeout(()=>{ t.style.animation='toastOut .4s ease forwards'; setTimeout(()=>t.remove(),400); },2800);
+}
+
+/* ============================================================
+   SERVER STATUS CHECK + VOICE LOADER
+============================================================ */
+async function checkServer(){
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className  = 'status-dot checking';
+  text.textContent = 'Connecting…';
+
+  try {
+    const res  = await fetch(`${getBackendUrl()}/health`, { signal: AbortSignal.timeout(5000) });
+    const data = await res.json();
+    if(res.ok && data.status === 'ok'){
+      state.serverOnline = true;
+      dot.className = 'status-dot online';
+      text.textContent = 'Server Online';
+      showToast('✅ Backend connected!','success');
+      await loadMurfVoices();
+    } else throw new Error();
+  } catch {
+    state.serverOnline = false;
+    dot.className = 'status-dot offline';
+    text.textContent = 'Server Offline';
+    if(state.voiceMode === 'murf') setVoiceMode('browser');
+    showToast('⚠️ Backend offline — using Browser TTS','error');
+  }
+}
+
+async function loadMurfVoices(){
+  try {
+    const res  = await fetch(`${getBackendUrl()}/voices`);
+    const data = await res.json();
+    state.murfVoices = data;
+    rebuildVoiceSelector(state.langTo);
+  } catch { /* use defaults */ }
+}
+
+/* ============================================================
+   TAB NAVIGATION
+============================================================ */
+document.querySelectorAll('.tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ============================================================
+   VOICE MODE TOGGLE
+============================================================ */
+function setVoiceMode(mode){
+  state.voiceMode = mode;
+  const btnB = document.getElementById('vmBrowser');
+  const btnM = document.getElementById('vmMurf');
+  const opts = document.getElementById('murfOptions');
+  const sub  = document.getElementById('vmSubLabel');
+  const tb   = document.getElementById('translateBtn');
+  const tt   = document.getElementById('translateBtnText');
+
+  if(mode === 'murf'){
+    btnB.className = 'vm-btn';
+    btnM.className = 'vm-btn active-murf';
+    opts.classList.add('open');
+    sub.textContent  = 'Murf AI — real neural voices via Gemini';
+    tb.classList.add('murf-mode');
+    tt.textContent   = 'Translate + Speak (Murf)';
+    showToast('✨ Murf AI mode active','murf');
+  } else {
+    btnB.className = 'vm-btn active-browser';
+    btnM.className = 'vm-btn';
+    opts.classList.remove('open');
+    sub.textContent  = 'Browser TTS — no backend needed';
+    tb.classList.remove('murf-mode');
+    tt.textContent   = 'Translate';
+  }
+}
+
+document.getElementById('vmBrowser').addEventListener('click', ()=> setVoiceMode('browser'));
+document.getElementById('vmMurf').addEventListener('click', ()=>{
+  if(!state.serverOnline){
+    showToast('⚠️ Start server.py first, then enable Murf','error');
+    checkServer();
+    return;
+  }
+  setVoiceMode('murf');
+});
+document.getElementById('backendUrl').addEventListener('change', ()=> checkServer());
+
+function rebuildVoiceSelector(lang){
+  const sel  = document.getElementById('murfVoiceSelect');
+  const list = state.murfVoices[lang] || [];
+  if(!list.length){ sel.innerHTML='<option value="">Default voice</option>'; return; }
+  sel.innerHTML = list.map(v=>`<option value="${v.id}">${v.name}</option>`).join('');
+}
+
+/* ============================================================
+   LANGUAGE CONTROLS
+============================================================ */
+document.getElementById('swapLangBtn').addEventListener('click',()=>{
+  const f=document.getElementById('langFrom'), t=document.getElementById('langTo');
+  [f.value,t.value]=[t.value,f.value];
+  state.langFrom=f.value; state.langTo=t.value;
+  rebuildVoiceSelector(state.langTo);
+  showToast('Languages swapped','info');
+});
+document.getElementById('langFrom').addEventListener('change', e=>{ state.langFrom=e.target.value; });
+document.getElementById('langTo').addEventListener('change',   e=>{ state.langTo=e.target.value; rebuildVoiceSelector(e.target.value); });
+
+/* ============================================================
+   PERSON TOGGLE
+============================================================ */
+const btnA = document.getElementById('btnPersonA');
+const btnB = document.getElementById('btnPersonB');
+
+function setActivePerson(p, silent){
+  state.activePerson = p;
+  btnA.className = p==='a' ? 'person-btn active-a' : 'person-btn';
+  btnB.className = p==='b' ? 'person-btn active-b' : 'person-btn';
+  if(!silent) showToast(`🎙️ Person ${p.toUpperCase()} speaking`,'info');
+}
+btnA.addEventListener('click', ()=> setActivePerson('a',false));
+btnB.addEventListener('click', ()=> setActivePerson('b',false));
+
+/* ============================================================
+   MIC PERMISSION — keep stream alive (no re-prompt)
+============================================================ */
+let _stream = null;
+function ensureMic(){
+  return new Promise((res,rej)=>{
+    if(_stream){ res(); return; }
+    if(!navigator.mediaDevices?.getUserMedia){ rej(new Error('no getUserMedia')); return; }
+    navigator.mediaDevices.getUserMedia({audio:true})
+      .then(s=>{ _stream=s; res(); }).catch(rej);
+  });
+}
+ensureMic().catch(()=>{});
+
+/* ============================================================
+   SPEECH RECOGNITION
+============================================================ */
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+const micBtn    = document.getElementById('micBtn');
+const inputText = document.getElementById('inputText');
+
+function startListening(){
+  ensureMic().then(()=>{
+    const rec = new SpeechRec();
+    rec.continuous=false; rec.interimResults=true;
+    rec.lang = getLangCode(state.langFrom);
+    state.recognition = rec;
+
+    rec.onstart  = ()=>{ state.isListening=true; micBtn.classList.add('listening'); micBtn.textContent='⏹'; showToast('🎙️ Listening… speak now','info'); };
+    rec.onresult = e=>{ inputText.value=Array.from(e.results).map(r=>r[0].transcript).join(''); };
+    rec.onend    = ()=>{
+      state.isListening=false; micBtn.classList.remove('listening'); micBtn.textContent='🎤';
+      if(inputText.value.trim() && state.langFrom!==state.langTo)
+        setTimeout(()=>triggerTranslate(), 280);
+    };
+    rec.onerror  = e=>{
+      state.isListening=false; micBtn.classList.remove('listening'); micBtn.textContent='🎤';
+      if(e.error==='not-allowed') showToast('Mic denied — allow in browser settings','error');
+      else if(e.error==='no-speech') showToast('No speech detected, try again','info');
+      else if(e.error!=='aborted') showToast('Speech error: '+e.error,'error');
+    };
+    try{ rec.start(); }catch(e){ console.warn(e); }
+  }).catch(()=> showToast('Mic permission denied','error'));
+}
+
+if(SpeechRec){
+  micBtn.addEventListener('click', ()=>{
+    if(state.isListening){ state.recognition?.stop(); }
+    else { startListening(); }
+  });
+} else {
+  micBtn.addEventListener('click', ()=> showToast('Speech API not supported — use Chrome','error'));
+}
+
+/* ============================================================
+   TRANSLATE FLOW
+============================================================ */
+const translateBtn = document.getElementById('translateBtn');
+const outputArea   = document.getElementById('outputArea');
+const speakBtn     = document.getElementById('speakBtn');
+const audioRow     = document.getElementById('audioPlayerRow');
+const audioPlayer  = document.getElementById('murfAudioPlayer');
+
+translateBtn.addEventListener('click', triggerTranslate);
+inputText.addEventListener('keydown', e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter') triggerTranslate(); });
+
+async function triggerTranslate(){
+  const text = inputText.value.trim();
+  if(!text){ showToast('Enter or speak text first','error'); return; }
+  if(state.langFrom===state.langTo){ showToast('Choose different languages','error'); return; }
+
+  translateBtn.classList.add('loading');
+  audioRow.classList.remove('visible');
+  const whoSpoke = state.activePerson;
+
+  try {
+    if(state.voiceMode==='murf' && state.serverOnline){
+      await translateWithMurf(text, whoSpoke);
+    } else {
+      translateWithBrowser(text, whoSpoke);
+    }
+  } catch(e) {
+    showToast('Translation failed: '+e.message,'error');
+    translateWithBrowser(text, whoSpoke);
+  } finally {
+    translateBtn.classList.remove('loading');
+  }
+}
+
+/* ── Path A: Gemini + Murf via Flask backend ── */
+async function translateWithMurf(text, whoSpoke){
+  const voiceId = document.getElementById('murfVoiceSelect').value || undefined;
+
+  const res = await fetch(`${getBackendUrl()}/translate-and-speak`, {
+    method:  'POST',
+    headers: { 'Content-Type':'application/json' },
+    body: JSON.stringify({
+      text,
+      sourceLang: state.langFrom,
+      targetLang: state.langTo,
+      voiceId,
+      voiceStyle: 'Conversational'
+    }),
+    signal: AbortSignal.timeout(45000)
+  });
+
+  const data = await res.json();
+
+  if(!res.ok){
+    showToast(`Backend error: ${data.error||res.status}`,'error');
+    translateWithBrowser(text, whoSpoke);
+    return;
+  }
+
+  const translated = data.translatedText || '';
+  state.lastTranslation     = translated;
+  state.lastTranslationLang = state.langTo;
+
+  renderOutput(translated, 'murf');
+  addBubble(whoSpoke, text, translated, 'murf');
+  inputText.value = '';
+  showToast('✨ Gemini translated · Murf speaking','murf');
+
+  if(data.audioBase64){
+    state.lastAudioBase64 = data.audioBase64;
+    audioPlayer.src = `data:audio/mp3;base64,${data.audioBase64}`;
+    audioRow.classList.add('visible');
+    try { await audioPlayer.play(); } catch { showToast('▶ Tap audio bar to play','info'); }
+  } else {
+    if(data.warning) showToast('Audio unavailable — using browser TTS','error');
+    speakBrowser(translated, state.langTo);
+  }
+
+  setActivePerson(whoSpoke==='a'?'b':'a', true);
+}
+
+/* ── Path B: Dictionary + browser TTS ── */
+function translateWithBrowser(text, whoSpoke){
+  const result = mockTranslate(text, state.langFrom, state.langTo);
+  state.lastTranslation     = result;
+  state.lastTranslationLang = state.langTo;
+
+  renderOutput(result, 'browser');
+  addBubble(whoSpoke, text, result, 'browser');
+  inputText.value = '';
+  showToast('Translation complete ✓','success');
+  setTimeout(()=> speakBrowser(result, state.langTo), 300);
+  setActivePerson(whoSpoke==='a'?'b':'a', true);
+}
+
+function renderOutput(text, engine){
+  outputArea.className = engine==='murf' ? 'output-area murf-result' : 'output-area';
+  outputArea.innerHTML = text + ' ';
+  speakBtn.className   = engine==='murf'
+    ? 'speak-btn visible murf-speak' : 'speak-btn visible';
+  speakBtn.textContent = engine==='murf' ? '✨ Replay' : '🔊 Play';
+  outputArea.appendChild(speakBtn);
+}
+
+/* ── Speak button ── */
+speakBtn.addEventListener('click', ()=>{
+  if(state.voiceMode==='murf' && state.lastAudioBase64){
+    audioPlayer.play().catch(()=> showToast('Click the audio bar to play','info'));
+  } else {
+    speakBrowser(state.lastTranslation, state.lastTranslationLang||state.langTo);
+  }
+});
+
+/* ── Browser TTS ── */
+function speakBrowser(text, lang){
+  if(!window.speechSynthesis){ showToast('TTS not supported','error'); return; }
+  window.speechSynthesis.cancel();
+  const utt  = new SpeechSynthesisUtterance(text);
+  utt.lang   = getLangCode(lang);
+  utt.rate   = 0.9;
+  utt.pitch  = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const match  = voices.find(v=> v.lang.startsWith(utt.lang.split('-')[0]));
+  if(match) utt.voice = match;
+  utt.onstart = ()=> showToast('🔊 Playing…','info');
+  window.speechSynthesis.speak(utt);
+}
+window.speechSynthesis.onvoiceschanged = ()=>{};
+
+/* ============================================================
+   CHAT BUBBLES
+============================================================ */
+function addBubble(person, original, translation, engine){
+  const cw = document.getElementById('chatWindow');
+  document.getElementById('chatEmpty')?.remove();
+
+  const badge = engine==='murf'
+    ? '<span class="bubble-badge bb-mu">✨Murf</span>'
+    : '<span class="bubble-badge bb-br">🌐Browser</span>';
+
+  const b = document.createElement('div');
+  b.className = `bubble person-${person}`;
+  b.innerHTML = `
+    <div class="bubble-meta">Person ${person.toUpperCase()} ${badge}</div>
+    <div class="bubble-body">${translation}</div>
+    <div class="bubble-original">${original}</div>
+  `;
+  cw.appendChild(b);
+  cw.scrollTop = cw.scrollHeight;
+}
+
+document.getElementById('clearChatBtn').addEventListener('click',()=>{
+  document.getElementById('chatWindow').innerHTML =
+    '<div class="chat-empty" id="chatEmpty"><span class="icon">💬</span><span>Start a conversation</span></div>';
+  showToast('Conversation cleared','info');
+});
+
+/* ============================================================
+   TRANSLATION DICTIONARY  (offline / browser fallback)
+============================================================ */
+const DICT = {
+  'en-es':{'hello':'hola','hi':'hola','goodbye':'adiós','yes':'sí','no':'no','please':'por favor','thank you':'gracias','thanks':'gracias','sorry':'lo siento','good morning':'buenos días','good night':'buenas noches','how are you':'¿cómo estás?','i am fine':'estoy bien','water':'agua','food':'comida','help':'ayuda','hospital':'hospital','i love you':'te quiero','beautiful':'hermoso','friend':'amigo','house':'casa','dog':'perro','cat':'gato','book':'libro','money':'dinero','good':'bueno','bad':'malo','big':'grande','small':'pequeño','hot':'caliente','cold':'frío','happy':'feliz','sad':'triste','today':'hoy','tomorrow':'mañana'},
+  'en-fr':{'hello':'bonjour','hi':'salut','goodbye':'au revoir','yes':'oui','no':'non','please':'s\'il vous plaît','thank you':'merci','sorry':'désolé','good morning':'bonjour','good night':'bonne nuit','water':'eau','food':'nourriture','help':'aide','hospital':'hôpital','i love you':'je t\'aime','beautiful':'beau','friend':'ami','house':'maison','dog':'chien','cat':'chat','book':'livre','money':'argent','good':'bon','bad':'mauvais','big':'grand','small':'petit','happy':'heureux','sad':'triste'},
+  'en-de':{'hello':'hallo','goodbye':'auf wiedersehen','yes':'ja','no':'nein','please':'bitte','thank you':'danke','sorry':'entschuldigung','good morning':'guten morgen','good night':'gute nacht','water':'wasser','food':'essen','help':'hilfe','hospital':'krankenhaus','i love you':'ich liebe dich','beautiful':'schön','friend':'freund','house':'haus','dog':'hund','cat':'katze','book':'buch','money':'geld','good':'gut','bad':'schlecht','big':'groß','small':'klein','happy':'glücklich','sad':'traurig'},
+  'en-hi':{'hello':'नमस्ते (namaste)','hi':'नमस्ते (namaste)','goodbye':'अलविदा (alvida)','yes':'हाँ (haan)','no':'नहीं (nahi)','please':'कृपया (kripaya)','thank you':'धन्यवाद (dhanyavaad)','thanks':'शुक्रिया (shukriya)','sorry':'माफ़ करें (maaf karo)','good morning':'शुभ प्रभात (shubh prabhat)','good night':'शुभ रात्रि (shubh ratri)','how are you':'आप कैसे हैं?','i am fine':'मैं ठीक हूँ','water':'पानी (paani)','food':'खाना (khaana)','help':'मदद (madad)','hospital':'अस्पताल (aspataal)','i love you':'मैं तुमसे प्यार करता हूँ','beautiful':'सुंदर (sundar)','friend':'दोस्त (dost)','house':'घर (ghar)','dog':'कुत्ता (kutta)','cat':'बिल्ली (billi)','book':'किताब (kitaab)','money':'पैसा (paisa)','good':'अच्छा (accha)','bad':'बुरा (bura)','big':'बड़ा (bada)','small':'छोटा (chota)','happy':'खुश (khush)','sad':'दुखी (dukhi)','today':'आज (aaj)','tomorrow':'कल (kal)'},
+  'en-ja':{'hello':'こんにちは','goodbye':'さようなら','yes':'はい','no':'いいえ','please':'おねがいします','thank you':'ありがとう','sorry':'ごめんなさい','good morning':'おはよう','good night':'おやすみ','water':'水','food':'食べ物','help':'助けて','hospital':'病院','beautiful':'美しい','friend':'友達','book':'本','money':'お金'},
+  'es-en':{'hola':'hello','adiós':'goodbye','sí':'yes','no':'no','por favor':'please','gracias':'thank you','agua':'water','comida':'food','ayuda':'help','amigo':'friend','casa':'house','perro':'dog','gato':'cat','libro':'book','bueno':'good','malo':'bad','feliz':'happy','triste':'sad'},
+  'fr-en':{'bonjour':'hello','salut':'hi','au revoir':'goodbye','oui':'yes','non':'no','merci':'thank you','eau':'water','nourriture':'food','aide':'help','ami':'friend','maison':'house','chien':'dog','chat':'cat','bon':'good','mauvais':'bad'},
+  'de-en':{'hallo':'hello','ja':'yes','nein':'no','bitte':'please','danke':'thank you','wasser':'water','essen':'food','hilfe':'help','freund':'friend','haus':'house','hund':'dog','katze':'cat','gut':'good','schlecht':'bad'},
+  'hi-en':{'नमस्ते':'hello','अलविदा':'goodbye','हाँ':'yes','नहीं':'no','धन्यवाद':'thank you','पानी':'water','खाना':'food','मदद':'help','दोस्त':'friend','घर':'house','अच्छा':'good','बुरा':'bad','खुश':'happy','दुखी':'sad','namaste':'hello','alvida':'goodbye','haan':'yes','nahi':'no','dhanyavaad':'thank you','paani':'water','khaana':'food','madad':'help','dost':'friend','ghar':'house','accha':'good'},
+};
+
+function mockTranslate(text, from, to){
+  if(from===to) return text+' (same language)';
+  if(!DICT[`${from}-${to}`]){
+    const mid = mockTranslateDirect(text, from, 'en');
+    return mockTranslateDirect(mid.replace(/ \(.*?\)/g,'').toLowerCase(), 'en', to);
+  }
+  return mockTranslateDirect(text, from, to);
+}
+function mockTranslateDirect(text, from, to){
+  const dict  = DICT[`${from}-${to}`] || {};
+  const lower = text.toLowerCase().trim();
+  if(dict[lower]) return cap(dict[lower]);
+  const words = lower.split(/\s+/);
+  const out=[]; let i=0;
+  while(i<words.length){
+    let matched=false;
+    for(let len=Math.min(6,words.length-i);len>=1;len--){
+      const phrase=words.slice(i,i+len).join(' ');
+      if(dict[phrase]){ out.push(dict[phrase]); i+=len; matched=true; break; }
+    }
+    if(!matched){ out.push(words[i]); i++; }
+  }
+  return cap(out.join(' '));
+}
+
+/* ============================================================
+   GAMES
+============================================================ */
+const QUIZ={
+  'en-es':[{q:'Hello',a:'Hola',w:['Adiós','Gracias','Bueno']},{q:'Goodbye',a:'Adiós',w:['Hola','Malo','Agua']},{q:'Thank you',a:'Gracias',w:['Hola','Por favor','Sí']},{q:'Water',a:'Agua',w:['Fuego','Tierra','Viento']},{q:'Dog',a:'Perro',w:['Gato','Pájaro','Pez']},{q:'House',a:'Casa',w:['Carro','Mesa','Silla']},{q:'Friend',a:'Amigo',w:['Enemigo','Vecino','Maestro']},{q:'Happy',a:'Feliz',w:['Triste','Enojado','Cansado']},{q:'Good',a:'Bueno',w:['Malo','Feo','Raro']},{q:'Money',a:'Dinero',w:['Tiempo','Amor','Suerte']},{q:'Beautiful',a:'Hermoso',w:['Feo','Raro','Grande']},{q:'Book',a:'Libro',w:['Lápiz','Mesa','Puerta']}],
+  'en-fr':[{q:'Hello',a:'Bonjour',w:['Au revoir','Merci','Oui']},{q:'Goodbye',a:'Au revoir',w:['Bonjour','Salut','Non']},{q:'Thank you',a:'Merci',w:['Bonjour','S\'il vous plaît','Oui']},{q:'Water',a:'Eau',w:['Feu','Terre','Air']},{q:'Dog',a:'Chien',w:['Chat','Oiseau','Poisson']},{q:'Friend',a:'Ami',w:['Ennemi','Voisin','Professeur']},{q:'Happy',a:'Heureux',w:['Triste','En colère','Fatigué']},{q:'Good',a:'Bon',w:['Mauvais','Laid','Bizarre']}],
+  'en-de':[{q:'Hello',a:'Hallo',w:['Auf Wiedersehen','Danke','Ja']},{q:'Thank you',a:'Danke',w:['Hallo','Bitte','Ja']},{q:'Water',a:'Wasser',w:['Feuer','Erde','Luft']},{q:'Dog',a:'Hund',w:['Katze','Vogel','Fisch']},{q:'Friend',a:'Freund',w:['Feind','Nachbar','Lehrer']},{q:'Happy',a:'Glücklich',w:['Traurig','Wütend','Müde']},{q:'Good',a:'Gut',w:['Schlecht','Hässlich','Seltsam']}],
+  'en-hi':[{q:'Hello',a:'नमस्ते (namaste)',w:['अलविदा (alvida)','धन्यवाद (dhanyavaad)','हाँ (haan)']},{q:'Thank you',a:'धन्यवाद (dhanyavaad)',w:['नमस्ते (namaste)','माफ़ करें','हाँ (haan)']},{q:'Water',a:'पानी (paani)',w:['खाना (khaana)','आग (aag)','हवा (hawa)']},{q:'Friend',a:'दोस्त (dost)',w:['दुश्मन','भाई (bhai)','माँ (maa)']},{q:'House',a:'घर (ghar)',w:['गाड़ी (gaadi)','स्कूल','बाज़ार']},{q:'Dog',a:'कुत्ता (kutta)',w:['बिल्ली (billi)','गाय','घोड़ा']},{q:'Happy',a:'खुश (khush)',w:['दुखी (dukhi)','थका','डरा']},{q:'Good',a:'अच्छा (accha)',w:['बुरा (bura)','बड़ा (bada)','छोटा']},{q:'Mother',a:'माँ (maa)',w:['पिता (pita)','भाई (bhai)','बहन (bahan)']},{q:'Beautiful',a:'सुंदर (sundar)',w:['बुरा','बड़ा','पुराना']}],
+  'es-en':[{q:'Hola',a:'Hello',w:['Goodbye','Thanks','Yes']},{q:'Adiós',a:'Goodbye',w:['Hello','Please','No']},{q:'Gracias',a:'Thank you',w:['Hello','Please','Yes']},{q:'Agua',a:'Water',w:['Fire','Earth','Wind']},{q:'Perro',a:'Dog',w:['Cat','Bird','Fish']},{q:'Amigo',a:'Friend',w:['Enemy','Neighbour','Teacher']},{q:'Feliz',a:'Happy',w:['Sad','Angry','Tired']},{q:'Bueno',a:'Good',w:['Bad','Ugly','Strange']}],
+};
+
+let gamePool=[], gameIdx=0;
+
+function initGame(){
+  gamePool=shuffle([...(QUIZ[state.game.mode]||QUIZ['en-es'])]);
+  gameIdx=0; state.game.score=0; state.game.streak=0;
+  updateScoreUI(); updateStreakUI(); loadQ();
+}
+function loadQ(){
+  if(gameIdx>=gamePool.length) gameIdx=0;
+  const q=gamePool[gameIdx]; state.game.answered=false;
+  const labels={'en-es':'English → Spanish','en-fr':'English → French','en-de':'English → German','en-hi':'English → Hindi','es-en':'Spanish → English'};
+  document.getElementById('qLang').textContent  = labels[state.game.mode]||'';
+  document.getElementById('qWord').textContent  = q.q;
+  document.getElementById('qHint').textContent  = 'Select the correct translation';
+  document.getElementById('feedbackMsg').textContent=''; document.getElementById('feedbackMsg').className='feedback-msg';
+  document.getElementById('nextBtn').classList.remove('show');
+  const grid=document.getElementById('answersGrid'); grid.innerHTML='';
+  shuffle([q.a,...q.w.slice(0,3)]).forEach(c=>{
+    const btn=document.createElement('button'); btn.className='answer-btn'; btn.textContent=c;
+    btn.addEventListener('click',()=>handleAnswer(btn,c,q.a));
+    grid.appendChild(btn);
+  });
+}
+function handleAnswer(btn, chosen, correct){
+  if(state.game.answered) return; state.game.answered=true;
+  document.querySelectorAll('.answer-btn').forEach(b=>b.disabled=true);
+  if(chosen===correct){
+    btn.classList.add('correct'); state.game.score++; state.game.streak++;
+    if(state.game.score>state.game.best) state.game.best=state.game.score;
+    document.getElementById('feedbackMsg').textContent='✓ Correct! +1';
+    document.getElementById('feedbackMsg').className='feedback-msg correct';
+    showToast('Correct! 🎉','success');
+  } else {
+    btn.classList.add('wrong'); state.game.streak=0;
+    document.querySelectorAll('.answer-btn').forEach(b=>{ if(b.textContent===correct) b.classList.add('correct'); });
+    document.getElementById('feedbackMsg').textContent=`✗ It was: ${correct}`;
+    document.getElementById('feedbackMsg').className='feedback-msg wrong';
+    showToast('Incorrect!','error');
+  }
+  updateScoreUI(); updateStreakUI();
+  document.getElementById('nextBtn').classList.add('show');
+  gameIdx++;
+}
+function updateScoreUI(){ document.getElementById('scoreVal').textContent=state.game.score; document.getElementById('bestVal').textContent=state.game.best; }
+function updateStreakUI(){
+  const bar=document.getElementById('streakBar'); bar.innerHTML='';
+  for(let i=0;i<state.game.streakMax;i++){
+    const d=document.createElement('div'); d.className='streak-dot'+(i<state.game.streak?' lit':''); bar.appendChild(d);
+  }
+}
+document.getElementById('nextBtn').addEventListener('click', loadQ);
+document.querySelectorAll('.mode-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); state.game.mode=btn.dataset.mode; initGame();
+  });
+});
+initGame();
+
+/* ============================================================
+   READING PANEL
+============================================================ */
+const PHRASES=[
+  {en:'Hello',es:'Hola',fr:'Bonjour',de:'Hallo',hi:'नमस्ते (Namaste)',cat:'greetings'},
+  {en:'Good morning',es:'Buenos días',fr:'Bonjour',de:'Guten Morgen',hi:'शुभ प्रभात (Shubh Prabhat)',cat:'greetings'},
+  {en:'Good afternoon',es:'Buenas tardes',fr:'Bon après-midi',de:'Guten Tag',hi:'शुभ दोपहर (Shubh Dopahar)',cat:'greetings'},
+  {en:'Good night',es:'Buenas noches',fr:'Bonne nuit',de:'Gute Nacht',hi:'शुभ रात्रि (Shubh Ratri)',cat:'greetings'},
+  {en:'Goodbye',es:'Adiós',fr:'Au revoir',de:'Auf Wiedersehen',hi:'अलविदा (Alvida)',cat:'greetings'},
+  {en:'Thank you',es:'Gracias',fr:'Merci',de:'Danke',hi:'धन्यवाद (Dhanyavaad)',cat:'polite'},
+  {en:'Please',es:'Por favor',fr:'S\'il vous plaît',de:'Bitte',hi:'कृपया (Kripaya)',cat:'polite'},
+  {en:'I\'m sorry',es:'Lo siento',fr:'Je suis désolé',de:'Es tut mir leid',hi:'माफ़ करें (Maaf Karen)',cat:'polite'},
+  {en:'Excuse me',es:'Con permiso',fr:'Excusez-moi',de:'Entschuldigung',hi:'क्षमा करें (Kshama Karen)',cat:'polite'},
+  {en:'You\'re welcome',es:'De nada',fr:'De rien',de:'Bitte sehr',hi:'कोई बात नहीं (Koi Baat Nahi)',cat:'polite'},
+  {en:'How are you?',es:'¿Cómo estás?',fr:'Comment allez-vous?',de:'Wie geht es Ihnen?',hi:'आप कैसे हैं? (Aap Kaise Hain?)',cat:'questions'},
+  {en:'What is your name?',es:'¿Cómo te llamas?',fr:'Comment vous appelez-vous?',de:'Wie heißen Sie?',hi:'आपका नाम क्या है?',cat:'questions'},
+  {en:'Where is the bathroom?',es:'¿Dónde está el baño?',fr:'Où sont les toilettes?',de:'Wo ist die Toilette?',hi:'शौचालय कहाँ है?',cat:'questions'},
+  {en:'How much does it cost?',es:'¿Cuánto cuesta?',fr:'Combien ça coûte?',de:'Wie viel kostet das?',hi:'यह कितने का है?',cat:'questions'},
+  {en:'Do you speak English?',es:'¿Hablas inglés?',fr:'Parlez-vous anglais?',de:'Sprechen Sie Englisch?',hi:'क्या आप अंग्रेज़ी बोलते हैं?',cat:'questions'},
+  {en:'Turn left',es:'Gira a la izquierda',fr:'Tournez à gauche',de:'Links abbiegen',hi:'बाएँ मुड़ें (Baayen Muden)',cat:'directions'},
+  {en:'Turn right',es:'Gira a la derecha',fr:'Tournez à droite',de:'Rechts abbiegen',hi:'दाएँ मुड़ें (Daayen Muden)',cat:'directions'},
+  {en:'Go straight',es:'Siga recto',fr:'Allez tout droit',de:'Geradeaus gehen',hi:'सीधे जाएँ (Seedhe Jaayen)',cat:'directions'},
+  {en:'Where is the hotel?',es:'¿Dónde está el hotel?',fr:'Où est l\'hôtel?',de:'Wo ist das Hotel?',hi:'होटल कहाँ है?',cat:'directions'},
+  {en:'Stop here',es:'Para aquí',fr:'Arrêtez-vous ici',de:'Hier anhalten',hi:'यहाँ रुकें (Yahaan Ruken)',cat:'directions'},
+  {en:'I am hungry',es:'Tengo hambre',fr:'J\'ai faim',de:'Ich habe Hunger',hi:'मुझे भूख लगी है',cat:'food'},
+  {en:'Water, please',es:'Agua, por favor',fr:'De l\'eau, s\'il vous plaît',de:'Wasser, bitte',hi:'पानी, कृपया (Paani, Kripaya)',cat:'food'},
+  {en:'The bill, please',es:'La cuenta, por favor',fr:'L\'addition, s\'il vous plaît',de:'Die Rechnung, bitte',hi:'बिल लाइए (Bill Laiye)',cat:'food'},
+  {en:'This is delicious!',es:'¡Está delicioso!',fr:'C\'est délicieux!',de:'Das ist köstlich!',hi:'यह बहुत स्वादिष्ट है!',cat:'food'},
+  {en:'I don\'t eat meat',es:'No como carne',fr:'Je ne mange pas de viande',de:'Ich esse kein Fleisch',hi:'मैं मांस नहीं खाता',cat:'food'},
+  {en:'Call the police!',es:'¡Llama a la policía!',fr:'Appelez la police!',de:'Rufen Sie die Polizei!',hi:'पुलिस को बुलाओ!',cat:'emergency'},
+  {en:'I need a doctor',es:'Necesito un médico',fr:'J\'ai besoin d\'un médecin',de:'Ich brauche einen Arzt',hi:'मुझे डॉक्टर चाहिए',cat:'emergency'},
+  {en:'Help!',es:'¡Ayuda!',fr:'Au secours!',de:'Hilfe!',hi:'मदद करो! (Madad Karo!)',cat:'emergency'},
+  {en:'I am lost',es:'Estoy perdido',fr:'Je suis perdu',de:'Ich habe mich verirrt',hi:'मैं खो गया हूँ',cat:'emergency'},
+  {en:'Fire!',es:'¡Fuego!',fr:'Au feu!',de:'Feuer!',hi:'आग! (Aag!)',cat:'emergency'},
+];
+
+function renderPhrases(filter){
+  const grid=document.getElementById('phrasesGrid');
+  const list=filter==='all'?PHRASES:PHRASES.filter(p=>p.cat===filter);
+  grid.innerHTML='';
+  list.forEach(p=>{
+    const card=document.createElement('div'); card.className='phrase-card';
+    card.innerHTML=`
+      <div class="phrase-category">${p.cat}</div>
+      <div class="phrase-english">${p.en}</div>
+      <div class="phrase-translations">
+        <div class="phrase-trans"><span class="lang-badge badge-hi">HI</span>${p.hi}</div>
+        <div class="phrase-trans"><span class="lang-badge badge-es">ES</span>${p.es}</div>
+        <div class="phrase-trans"><span class="lang-badge badge-fr">FR</span>${p.fr}</div>
+        <div class="phrase-trans"><span class="lang-badge badge-de">DE</span>${p.de}</div>
+      </div>
+      <button class="phrase-speak-btn" title="Hear English">🔊</button>`;
+    card.querySelector('.phrase-speak-btn').addEventListener('click',e=>{ e.stopPropagation(); speakBrowser(p.en,'en'); });
+    card.addEventListener('click',()=> speakBrowser(p.en,'en'));
+    grid.appendChild(card);
+  });
+}
+document.querySelectorAll('.filter-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); renderPhrases(btn.dataset.cat);
+  });
+});
+renderPhrases('all');
+
+/* ============================================================
+   INIT
+============================================================ */
+setTimeout(()=>{
+  showToast('🌐 Checking backend server…','info');
+  checkServer();
+}, 700);
+
+setTimeout(()=>{
+  if(!state.serverOnline)
+    showToast('💡 Tip: run server.py to enable Gemini + Murf AI','info');
+}, 4000);
+</script>
+</body>
+</html>

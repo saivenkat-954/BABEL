@@ -1,0 +1,12 @@
+# ─────────────────────────────────────────────────────────────
+#  Babel Voice Pro  —  Environment Variables
+#  Copy this file to  .env  and fill in your real keys.
+# ─────────────────────────────────────────────────────────────
+
+# Get your Gemini key free at:
+#   https://aistudio.google.com/app/apikey
+GEMINI_API_KEY="AIzaSyBpCrsN_QiogrK2Vg-1Jap4wj05YwB_iHQ"
+
+# Get your Murf key at:
+#   https://murf.ai/api  (sign up → API Keys)
+MURF_API_KEY="ap2_4db2995d-477e-4845-8622-5f1b7c8e1cdb"
